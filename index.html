@@ -1,0 +1,663 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>拼豆图案生成器【线下手工增强版】</title>
+<style>
+    * {
+        box-sizing: border-box;
+        font-family: "Microsoft Yahei", "PingFang SC", sans-serif;
+    }
+
+    body {
+        max-width: 1500px;
+        margin: 24px auto;
+        padding: 0 20px;
+        background: linear-gradient(135deg, #f5f7fa, #e4ecf7);
+    }
+
+    h1, h2, h4 {
+        margin: 0 0 12px;
+        color: #222;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+    }
+
+    .row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .col {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .tip {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+
+    .control {
+        background: #fafafa;
+        border: 1px solid #eaeaea;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    .control label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    input[type="range"] {
+        width: 100%;
+    }
+
+    .btn {
+        background: #4f7cff;
+        color: #fff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-right: 6px;
+        margin-bottom: 6px;
+        transition: 0.2s;
+    }
+
+    .btn:hover {
+        background: #3a65e0;
+    }
+
+    .btn.green {
+        background: #36b37e;
+    }
+    .btn.green:hover {
+        background: #2a9a6b;
+    }
+    .btn.orange {
+        background: #f2994a;
+    }
+    .btn.orange:hover {
+        background: #e08435;
+    }
+
+    .checkbox-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .checkbox-row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    .canvas-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        border: 1px solid #eee;
+    }
+
+    canvas {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .color-key {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .color-key-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .color-block {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        flex-shrink: 0;
+    }
+
+    .color-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.4;
+    }
+
+    .color-code {
+        font-weight: 700;
+        color: #222;
+    }
+
+    .color-count {
+        color: #666;
+        font-size: 12px;
+    }
+
+    .stat {
+        margin-top: 12px;
+        padding: 12px;
+        background: #f0f4ff;
+        border-radius: 10px;
+        color: #333;
+        font-size: 14px;
+        line-height: 1.7;
+    }
+    .small-input-row{
+        display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;
+    }
+    .small-input-row input{
+        width:70px;padding:4px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+    <h1>🎨 拼豆图案生成器｜线下手工增强版</h1>
+    <p class="tip">上传图片，基于CIEDE2000人眼色差匹配拼豆色板；支持圆形豆预览、可控轮廓、亮度预处理、A4打印图纸、CSV清单导出。最大120格。</p>
+
+    <input type="file" id="imgUpload" accept="image/*" />
+
+    <div class="row">
+        <div class="col">
+            <div class="control">
+                <label>横向格子数量：<span id="sizeVal">40</span></label>
+                <input type="range" id="gridSize" min="8" max="120" value="40" />
+            </div>
+            <div class="control">
+                <label>颜色匹配精度：<span id="precisionVal">平衡</span></label>
+                <input type="range" id="precision" min="1" max="5" value="3" />
+                <div class="tip" style="margin-top:6px;">1=少色、简化；5=贴近原图、颜色种类多</div>
+            </div>
+            <div class="control">
+                <label>图片预处理（改善暗图）</label>
+                <div class="small-input-row">
+                    <span>亮度：</span>
+                    <input type="range" id="brightness" min="0" max="200" value="100">
+                    <span>对比度：</span>
+                    <input type="range" id="contrast" min="0" max="200" value="100">
+                    <span>饱和度：</span>
+                    <input type="range" id="saturate" min="0" max="200" value="100">
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="control">
+                <label>图纸显示选项</label>
+                <div class="checkbox-row">
+                    <label><input type="checkbox" id="showNumber" checked /> 显示色号</label>
+                    <label><input type="checkbox" id="showGrid" checked /> 显示网格</label>
+                    <label><input type="checkbox" id="showIndex" checked /> 行列编号</label>
+                    <label><input type="checkbox" id="indexStartZero" /> 编号从0开始</label>
+                    <label><input type="checkbox" id="bwMode" /> 黑白模式</label>
+                    <label><input type="checkbox" id="circleBean" checked /> 圆形拼豆（推荐）</label>
+                </div>
+                <div class="checkbox-row">
+                    <label><input type="checkbox" id="forceBlackOutline" /> 开启轮廓</label>
+                </div>
+                <div class="small-input-row">
+                    <span>轮廓强度：</span>
+                    <input type="range" id="outlineStrength" min="1" max="5" value="2">
+                </div>
+            </div>
+
+            <div class="control">
+                <label>导出操作</label>
+                <button class="btn" id="downloadPngBtn">下载PNG打印图纸</button>
+                <button class="btn green" id="downloadCsvBtn">下载配色CSV</button>
+                <button class="btn orange" id="resetBtn">重置全部设置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="canvas-box">
+            <h4>原图预览</h4>
+            <canvas id="originCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="canvas-box">
+            <h4>拼豆图纸（可直接打印）</h4>
+            <canvas id="previewCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>📋 配色清单（手工取料对照）</h2>
+    <div id="colorKey" class="color-key"></div>
+    <div class="stat" id="statBox"></div>
+</div>
+
+<script>
+    const upload = document.getElementById("imgUpload");
+    const gridSlider = document.getElementById("gridSize");
+    const sizeVal = document.getElementById("sizeVal");
+    const precisionSlider = document.getElementById("precision");
+    const precisionVal = document.getElementById("precisionVal");
+    const showNumber = document.getElementById("showNumber");
+    const showGrid = document.getElementById("showGrid");
+    const showIndex = document.getElementById("showIndex");
+    const indexStartZero = document.getElementById("indexStartZero");
+    const bwMode = document.getElementById("bwMode");
+    const circleBean = document.getElementById("circleBean");
+    const forceBlackOutline = document.getElementById("forceBlackOutline");
+    const outlineStrength = document.getElementById("outlineStrength");
+    const brightnessEl = document.getElementById("brightness");
+    const contrastEl = document.getElementById("contrast");
+    const saturateEl = document.getElementById("saturate");
+
+    const downloadPngBtn = document.getElementById("downloadPngBtn");
+    const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const originCanvas = document.getElementById("originCanvas");
+    const previewCanvas = document.getElementById("previewCanvas");
+    const ctxOrigin = originCanvas.getContext("2d");
+    const ctxPreview = previewCanvas.getContext("2d");
+    const colorKeyBox = document.getElementById("colorKey");
+    const statBox = document.getElementById("statBox");
+
+    let img = null;
+    let gridCount = 40;
+    let colorCounts = {};
+
+    // ===== 拼豆色板（保留原有，可继续扩充）=====
+    const beadPalette = [
+        { code: "B01", name: "白色",   rgb: [255, 255, 255] },
+        { code: "B02", name: "奶白",   rgb: [245, 240, 220] },
+        { code: "B03", name: "浅灰",   rgb: [200, 200, 200] },
+        { code: "B04", name: "灰色",   rgb: [150, 150, 150] },
+        { code: "B05", name: "深灰",   rgb: [100, 100, 100] },
+        { code: "B06", name: "黑色",   rgb: [20, 20, 20] },
+
+        { code: "R01", name: "浅粉",   rgb: [255, 182, 193] },
+        { code: "R02", name: "粉红",   rgb: [255, 105, 180] },
+        { code: "R03", name: "玫红",   rgb: [200, 30, 90] },
+        { code: "R04", name: "红色",   rgb: [230, 0, 40] },
+        { code: "R05", name: "酒红",   rgb: [140, 20, 40] },
+        { code: "R06", name: "珊瑚红", rgb: [255, 120, 90] },
+
+        { code: "O01", name: "浅橙",   rgb: [255, 200, 120] },
+        { code: "O02", name: "橙色",   rgb: [255, 140, 50] },
+        { code: "O03", name: "深橙",   rgb: [220, 90, 20] },
+        { code: "O04", name: "棕橙",   rgb: [180, 110, 60] },
+
+        { code: "Y01", name: "米黄",   rgb: [255, 230, 150] },
+        { code: "Y02", name: "浅黄色", rgb: [255, 240, 120] },
+        { code: "Y03", name: "黄色",   rgb: [255, 210, 0] },
+        { code: "Y04", name: "金黄色", rgb: [230, 170, 0] },
+        { code: "Y05", name: "芥末黄", rgb: [200, 140, 0] },
+
+        { code: "G01", name: "浅草绿", rgb: [200, 240, 130] },
+        { code: "G02", name: "青柠绿", rgb: [150, 230, 80] },
+        { code: "G03", name: "绿色",   rgb: [70, 180, 70] },
+        { code: "G04", name: "深绿",   rgb: [30, 120, 60] },
+        { code: "G05", name: "墨绿",   rgb: [20, 80, 50] },
+        { code: "G06", name: "橄榄绿", rgb: [120, 140, 70] },
+        { code: "G07", name: "薄荷绿", rgb: [130, 220, 180] },
+
+        { code: "C01", name: "浅薄荷蓝", rgb: [180, 230, 230] },
+        { code: "C02", name: "天空蓝",   rgb: [130, 200, 255] },
+        { code: "C03", name: "浅蓝色",   rgb: [90, 160, 230] },
+        { code: "C04", name: "湖蓝",     rgb: [50, 130, 210] },
+        { code: "C05", name: "蓝色",     rgb: [30, 90, 200] },
+        { code: "C06", name: "深蓝色",   rgb: [20, 50, 140] },
+        { code: "C07", name: "靛蓝",     rgb: [40, 60, 120] },
+
+        { code: "P01", name: "浅紫",   rgb: [210, 180, 255] },
+        { code: "P02", name: "薰衣草紫", rgb: [170, 130, 220] },
+        { code: "P03", name: "紫色",   rgb: [120, 60, 180] },
+        { code: "P04", name: "深紫",   rgb: [70, 30, 110] },
+
+        { code: "N01", name: "浅棕",   rgb: [200, 160, 120] },
+        { code: "N02", name: "棕色",   rgb: [160, 110, 70] },
+        { code: "N03", name: "深棕",   rgb: [110, 70, 40] },
+        { code: "N04", name: "咖啡",   rgb: [90, 60, 40] },
+
+        { code: "T01", name: "透白", rgb: [240, 248, 255] },
+        { code: "T02", name: "荧光黄",     rgb: [220, 255, 80] },
+        { code: "T03", name: "荧光绿",     rgb: [120, 255, 120] },
+        { code: "T04", name: "透明蓝",     rgb: [170, 220, 255] }
+    ];
+    const bwPalette = [
+        { code: "B01", name: "白色", rgb: [255, 255, 255] },
+        { code: "B06", name: "黑色", rgb: [20, 20, 20] }
+    ];
+
+    // ========= 颜色转换 & CIEDE2000（人眼色差，核心提升） =========
+    function rgb2lab(r,g,b){
+        r /=255; g/=255; b/=255;
+        r = r>0.04045 ? Math.pow((r+0.055)/1.055, 2.4) : r/12.92;
+        g = g>0.04045 ? Math.pow((g+0.055)/1.055, 2.4) : g/12.92;
+        b = b>0.04045 ? Math.pow((b+0.055)/1.055, 2.4) : b/12.92;
+        let x = r*0.4124 + g*0.3576 + b*0.1805;
+        let y = r*0.2127 + g*0.7152 + b*0.0722;
+        let z = r*0.0193 + g*0.1192 + b*0.9503;
+        x /=0.95047; y /=1.000; z /=1.08883;
+        function f(t){return t>0.008856 ? Math.cbrt(t) : (7.787*t)+(16/116);}
+        let fx = f(x), fy = f(y), fz = f(z);
+        return [116*fy -16, 500*(fx-fy), 200*(fy-fz)];
+    }
+    function ciede2000(l1,a1,b1,l2,a2,b2){
+        const deg2rad = d=>d*Math.PI/180;
+        const rad2deg = r=>r*180/Math.PI;
+        const c1 = Math.hypot(a1,b1), c2 = Math.hypot(a2,b2);
+        const cbar = (c1+c2)/2;
+        const g = 0.5*(1-Math.sqrt(Math.pow(cbar,7)/(Math.pow(cbar,7)+Math.pow(25,7))));
+        const a1p = a1*(1+g), a2p = a2*(1+g);
+        const c1p = Math.hypot(a1p,b1), c2p = Math.hypot(a2p,b2);
+        const h1p = b1===0&&a1p===0?0:rad2deg(Math.atan2(b1,a1p));
+        const h2p = b2===0&&a2p===0?0:rad2deg(Math.atan2(b2,a2p));
+        const dhp = Math.abs(h1p-h2p)>180 ? (h1p<h2p ? h1p-h2p+360 : h1p-h2p-360) : h1p-h2p;
+        const dL = l2-l1;
+        const dC = c2p-c1p;
+        const dH = 2*Math.sqrt(c1p*c2p)*Math.sin(deg2rad(dhp/2));
+        const Lbar = (l1+l2)/2;
+        const cbarp = (c1p+c2p)/2;
+        let hbarp = (Math.abs(h1p-h2p)>180) ? (h1p+h2p+360)/2 : (h1p+h2p)/2;
+        const T = 1 - 0.17*Math.cos(deg2rad(hbarp-30)) + 0.24*Math.cos(deg2rad(2*hbarp)) + 0.32*Math.cos(deg2rad(3*hbarp+6)) - 0.20*Math.cos(deg2rad(4*hbarp-63));
+        const sl = 1 + (0.015*Math.pow(Lbar-50,2))/Math.sqrt(20+Math.pow(Lbar-50,2));
+        const sc = 1 + 0.045*cbarp;
+        const sh = 1 + 0.015*cbarp*T;
+        const rt = -2*Math.sqrt(Math.pow(cbarp,7)/(Math.pow(cbarp,7)+Math.pow(25,7))) * Math.sin(deg2rad(60*Math.exp(-Math.pow((hbarp-275)/25,2))));
+        return Math.sqrt( Math.pow(dL/sl,2)+Math.pow(dC/sc,2)+Math.pow(dH/sh,2)+rt*(dC/sc)*(dH/sh) );
+    }
+    function getClosestBeadColor(r,g,b){
+        const palette = bwMode.checked ? bwPalette : beadPalette;
+        const [L1,A1,B1] = rgb2lab(r,g,b);
+        let minDE = Infinity;
+        let best = palette[0];
+        for(const c of palette){
+            const [L2,A2,B2] = rgb2lab(c.rgb[0],c.rgb[1],c.rgb[2]);
+            const de = ciede2000(L1,A1,B1,L2,A2,B2);
+            if(de < minDE){
+                minDE = de;
+                best = c;
+            }
+        }
+        return best;
+    }
+
+    // 可控轮廓算法，不会大面积涂黑
+    function applyOutline(grid,strength){
+        const h = grid.length;
+        const w = grid[0].length;
+        const newGrid = grid.map(row=>row.slice());
+        const palette = bwMode.checked ? bwPalette : beadPalette;
+        const black = palette.find(p=>p.code==="B06") || palette[0];
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+        for(let y=1;y<h-1;y++){
+            for(let x=1;x<w-1;x++){
+                const c = grid[y][x];
+                let diffCnt = 0;
+                for(const [dy,dx] of dirs){
+                    const n = grid[y+dy][x+dx];
+                    if(n.code !== c.code) diffCnt++;
+                }
+                if(diffCnt >= strength){
+                    newGrid[y][x] = black;
+                }
+            }
+        }
+        return newGrid;
+    }
+
+    // 图片滤镜预处理（亮度/对比度/饱和度）
+    function applyFilter(imgData, br, ct, sat){
+        const d = imgData.data;
+        for(let i=0;i<d.length;i+=4){
+            let r = d[i], g = d[i+1], b = d[i+2];
+            // 亮度
+            r = r*br/100; g=g*br/100; b=b*br/100;
+            // 对比度
+            const cf = (ct-100)/100 + 1;
+            r = (r-128)*cf +128;
+            g = (g-128)*cf +128;
+            b = (b-128)*cf +128;
+            // 饱和度
+            const gray = r*0.299 + g*0.587 + b*0.114;
+            const sf = sat/100;
+            r = gray + (r-gray)*sf;
+            g = gray + (g-gray)*sf;
+            b = gray + (b-gray)*sf;
+            d[i] = Math.max(0,Math.min(255,r));
+            d[i+1] = Math.max(0,Math.min(255,g));
+            d[i+2] = Math.max(0,Math.min(255,b));
+        }
+        return imgData;
+    }
+
+    // 滑块绑定
+    gridSlider.oninput = ()=>{
+        gridCount = Number(gridSlider.value);
+        sizeVal.textContent = gridCount;
+        if(img) renderBeans();
+    };
+    const precisionMap = {1:"超简",2:"低精度",3:"平衡",4:"高精度",5:"超精细"};
+    precisionSlider.oninput = ()=>{
+        precisionVal.textContent = precisionMap[precisionSlider.value];
+        if(img) renderBeans();
+    };
+    [showNumber,showGrid,showIndex,indexStartZero,bwMode,circleBean,forceBlackOutline,outlineStrength,brightnessEl,contrastEl,saturateEl].forEach(el=>{
+        el.addEventListener("change",()=>{if(img) renderBeans();});
+    });
+
+    // 上传图片
+    upload.onchange = (e)=>{
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ev=>{
+            img = new Image();
+            img.onload = ()=>renderBeans();
+            img.src = ev.target.result;
+        }
+        reader.readAsDataURL(file);
+    };
+
+    // 下载PNG（图纸自带标题信息，打印友好）
+    downloadPngBtn.onclick = ()=>{
+        const link = document.createElement("a");
+        link.download = `拼豆图纸_${gridCount}格_${bwMode.checked?"黑白":"彩色"}.png`;
+        link.href = previewCanvas.toDataURL("image/png");
+        link.click();
+    };
+    downloadCsvBtn.onclick = ()=>{
+        const rows = [["色号","名称","RGB","数量"]];
+        const palette = bwMode.checked ? bwPalette : beadPalette;
+        for(const c of palette){
+            const cnt = colorCounts[c.code]||0;
+            if(cnt>0) rows.push([c.code,c.name,`${c.rgb[0]},${c.rgb[1]},${c.rgb[2]}`,cnt]);
+        }
+        const csv = "\uFEFF"+rows.map(r=>r.join(",")).join("\n");
+        const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+        const link = document.createElement("a");
+        link.download = `拼豆配色清单_${gridCount}格.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+    }
+    resetBtn.onclick = ()=>{
+        gridSlider.value = 40; gridCount=40; sizeVal.textContent=40;
+        precisionSlider.value=3; precisionVal.textContent="平衡";
+        brightnessEl.value=100; contrastEl.value=100; saturateEl.value=100;
+        showNumber.checked=true; showGrid.checked=true; showIndex.checked=true;
+        indexStartZero.checked=false; bwMode.checked=false; circleBean.checked=true;
+        forceBlackOutline.checked=false; outlineStrength.value=2;
+        img=null; upload.value="";
+        originCanvas.width=originCanvas.height=0; previewCanvas.width=previewCanvas.height=0;
+        colorKeyBox.innerHTML=""; statBox.innerHTML="";
+    }
+
+    // 主渲染
+    function renderBeans(){
+        // 原图预览
+        originCanvas.width = 280; originCanvas.height = 280;
+        ctxOrigin.drawImage(img,0,0,280,280);
+
+        // 单元格大小自适应
+        let cellSize;
+        if(gridCount <=40) cellSize=18;
+        else if(gridCount <=60) cellSize=14;
+        else if(gridCount <=80) cellSize=11;
+        else if(gridCount <=100) cellSize=9;
+        else cellSize=7;
+
+        const labelSize = showIndex.checked ? 22 : 0;
+        const numberSize = showNumber.checked ? Math.max(6, Math.floor(cellSize*0.38)) : 0;
+        previewCanvas.width = gridCount * cellSize + labelSize;
+        previewCanvas.height = gridCount * cellSize + labelSize;
+        ctxPreview.clearRect(0,0,previewCanvas.width,previewCanvas.height);
+
+        // 采样+滤镜预处理
+        const tempC = document.createElement("canvas");
+        tempC.width = gridCount; tempC.height = gridCount;
+        const tempCtx = tempC.getContext("2d");
+        tempCtx.drawImage(img,0,0,gridCount,gridCount);
+        let imgData = tempCtx.getImageData(0,0,gridCount,gridCount);
+        imgData = applyFilter(imgData, Number(brightnessEl.value), Number(contrastEl.value), Number(saturateEl.value));
+        tempCtx.putImageData(imgData,0,0);
+
+        // 生成网格
+        const grid = [];
+        colorCounts = {};
+        for(let y=0;y<gridCount;y++){
+            const row = [];
+            for(let x=0;x<gridCount;x++){
+                const idx = (y*gridCount + x)*4;
+                const r = imgData.data[idx];
+                const g = imgData.data[idx+1];
+                const b = imgData.data[idx+2];
+                const color = getClosestBeadColor(r,g,b);
+                 row.push(color);
+                 colorCounts[color.code] = (colorCounts[color.code]||0)+1;
+             }
+             grid.push(row);
+         }
+         // 轮廓
+         if(forceBlackOutline.checked){
+             const st = Number(outlineStrength.value);
+             const outlined = applyOutline(grid, st);
+             for(let y=0;y<gridCount;y++){
+                 for(let x=0;x<gridCount;x++) grid[y][x]=outlined[y][x];
+             }
+             colorCounts = {};
+             for(let y=0;y<gridCount;y++) for(let x=0;x<gridCount;x++){
+                 const c = grid[y][x];
+                 colorCounts[c.code]=(colorCounts[c.code]||0)+1;
+             }
+         }
+         // 绘制行列编号
+         if(showIndex.checked){
+             ctxPreview.fillStyle="#222";
+             ctxPreview.font = `bold ${Math.max(9, cellSize*0.48)}px Arial`;
+             ctxPreview.textAlign="center"; ctxPreview.textBaseline="middle";
+             const offset = indexStartZero.checked ? 0 : 1;
+             for(let i=0;i<gridCount;i++){
+                 ctxPreview.fillText(i+offset, labelSize + i*cellSize + cellSize/2, labelSize/2);
+                 ctxPreview.fillText(i+offset, labelSize/2, labelSize + i*cellSize + cellSize/2);
+             }
+         }
+         // 绘制拼豆
+         for(let y=0;y<gridCount;y++){
+             for(let x=0;x<gridCount;x++){
+                 const c = grid[y][x];
+                 const ox = labelSize + x*cellSize;
+                 const oy = labelSize + y*cellSize;
+                 ctxPreview.fillStyle = `rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`;
+                 if(circleBean.checked){
+                     ctxPreview.beginPath();
+                     ctxPreview.arc(ox+cellSize/2, oy+cellSize/2, cellSize/2*0.85, 0, Math.PI*2);
+                     ctxPreview.fill();
+                 }else{
+                     ctxPreview.fillRect(ox,oy,cellSize,cellSize);
+                 }
+                 if(showGrid.checked){
+                     ctxPreview.strokeStyle="rgba(0,0,0,0.16)";
+                     ctxPreview.strokeRect(ox+0.5, oy+0.5, cellSize, cellSize);
+                 }
+                 if(showNumber.checked && cellSize >= 10){
+                     const br = c.rgb[0]*0.299 + c.rgb[1]*0.587 + c.rgb[2]*0.114;
+                     ctxPreview.fillStyle = br>140 ? "rgba(0,0,0,0.75)" : "rgba(255,255,255,0.92)";
+                     ctxPreview.font = `bold ${numberSize}px Arial`;
+                     ctxPreview.textAlign="center"; ctxPreview.textBaseline="middle";
+                     ctxPreview.fillText(c.code, ox+cellSize/2, oy+cellSize/2);
+                 }
+             }
+         }
+         renderColorKey(grid);
+     }
+     function renderColorKey(grid){
+         colorKeyBox.innerHTML = "";
+         const palette = bwMode.checked ? bwPalette : beadPalette;
+         const list = palette.map(c=>({...c, count:colorCounts[c.code]||0})).filter(c=>c.count>0).sort((a,b)=>b.count - a.count);
+         list.forEach(c=>{
+             const item = document.createElement("div");
+             item.className="color-key-item";
+             item.innerHTML = `
+                 <div class="color-block" style="background:rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})"></div>
+                 <div class="color-info">
+                     <span class="color-code">${c.code} ${c.name}</span>
+                     <span class="color-count">数量：${c.count} 颗</span>
+                 </div>
+             `;
+             colorKeyBox.appendChild(item);
+         })
+         const total = Object.values(colorCounts).reduce((a,b)=>a+b,0);
+         const used = list.length;
+         statBox.innerHTML = `
+             图纸规格：<b>${gridCount} × ${gridCount}</b>
+            　|　
+             使用颜色：<b>${used}</b> 种
+            　|　
+             拼豆总数：<b>${total}</b> 颗
+            　|　
+             豆样式：<b>${circleBean.checked?"圆形豆":"方块"}</b>
+            　|　
+             色号模式：<b>${bwMode.checked?"黑白":"彩色"}</b>
+         `;
+     }
+ </script>
+ </body>
+ </html>
