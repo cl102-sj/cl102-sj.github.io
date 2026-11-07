@@ -1,0 +1,1164 @@
+<html lang="zh-CN">
+ <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <title>拼豆图案生成器｜Mard221色版</title>
+     <style>
+         * {
+             box-sizing: border-box;
+             font-family: "Microsoft Yahei", "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+             margin: 0;
+             padding: 0;
+         }
+         body {
+             max-width: 1400px;
+             margin: 24px auto;
+             padding: 0 20px;
+             background: linear-gradient(135deg, #f0f4ff 0%, #f7f8fa 100%);
+             min-height: 100vh;
+             color: #222;
+         }
+         h1 {
+             font-size: 28px;
+             margin: 0 0 8px;
+             background: linear-gradient(90deg, #4f7cff 0%, #8b5cf6 100%);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+             font-weight: 700;
+         }
+         .tip {
+             color: #666;
+             font-size: 14px;
+             margin-bottom: 20px;
+             line-height: 1.7;
+         }
+         /* 顶部上传面板 */
+         .top-panel {
+             background: #fff;
+             border-radius: 18px;
+             padding: 24px;
+             box-shadow: 0 4px 20px rgba(79, 124, 255, 0.08);
+             margin-bottom: 20px;
+         }
+         .upload-area {
+             display: flex;
+             align-items: center;
+             gap: 16px;
+             flex-wrap: wrap;
+             padding: 16px;
+             background: #f8faff;
+             border-radius: 12px;
+             border: 1px dashed #c7d4ff;
+         }
+         input[type="file"] {
+             font-size: 14px;
+             color: #555;
+         }
+         input[type="file"]::file-selector-button {
+             background: linear-gradient(90deg, #4f7cff 0%, #6b8cff 100%);
+             color: #fff;
+             border: none;
+             padding: 8px 16px;
+             border-radius: 8px;
+             cursor: pointer;
+             margin-right: 12px;
+             transition: 0.2s;
+         }
+         input[type="file"]::file-selector-button:hover {
+             background: linear-gradient(90deg, #3a65e0 0%, #5a7cf0 100%);
+         }
+         /* 图纸预览区 */
+         .preview-box {
+             background: #fff;
+             border-radius: 18px;
+             padding: 20px;
+             border: 1px solid #eaeef2;
+             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+             margin-bottom: 20px;
+         }
+         .preview-title {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             margin-bottom: 16px;
+             flex-wrap: wrap;
+             gap: 12px;
+         }
+         .preview-title h4 {
+             margin: 0;
+             font-size: 18px;
+             color: #222;
+         }
+         .preview-controls {
+             display: flex;
+             align-items: center;
+             gap: 16px;
+             flex-wrap: wrap;
+         }
+         .grid-info {
+             font-size: 14px;
+             color: #4f7cff;
+             background: #f0f4ff;
+             padding: 6px 14px;
+             border-radius: 8px;
+             font-weight: 500;
+         }
+         /* 缩放控件 */
+         .zoom-controls {
+             display: flex;
+             align-items: center;
+             gap: 6px;
+             background: #f5f7fa;
+             padding: 4px;
+             border-radius: 8px;
+         }
+         .btn-small {
+             width: 28px;
+             height: 28px;
+             border: none;
+             background: #fff;
+             border-radius: 6px;
+             cursor: pointer;
+             font-size: 16px;
+             color: #555;
+             transition: 0.2s;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+         }
+         .btn-small:hover {
+             background: #4f7cff;
+             color: #fff;
+         }
+         #zoomVal {
+             font-size: 13px;
+             color: #666;
+             min-width: 50px;
+             text-align: center;
+         }
+         .paper-wrap {
+             overflow: auto;
+             border: 1px solid #eaeef2;
+             border-radius: 12px;
+             background: #fafbfc;
+             padding: 16px;
+             max-height: 65vh;
+         }
+         table.paper-grid {
+             border-collapse: collapse;
+             table-layout: fixed;
+             margin: 0 auto;
+         }
+         table.paper-grid td {
+             width: 24px;
+             height: 24px;
+             border: 1px solid #d9dde2;
+             text-align: center;
+             vertical-align: middle;
+             font-size: 10px;
+             font-weight: 700;
+             color: #222;
+             padding: 0;
+             position: relative;
+             transition: transform 0.1s;
+         }
+         table.paper-grid .index-cell {
+             background: #f4f6f8;
+             color: #555;
+             font-size: 11px;
+         }
+         table.paper-grid .row-index,
+         table.paper-grid .col-index {
+             background: linear-gradient(135deg, #ffe066 0%, #ffd43b 100%);
+             color: #222;
+             font-weight: 700;
+             font-size: 11px;
+         }
+         table.paper-grid .cell-bead {
+             cursor: pointer;
+         }
+         table.paper-grid .cell-bead:hover::after {
+             content: attr(data-bead-info);
+             position: absolute;
+             bottom: 120%;
+             left: 50%;
+             transform: translateX(-50%);
+             background: rgba(0, 0, 0, 0.85);
+             color: #fff;
+             padding: 5px 10px;
+             border-radius: 6px;
+             font-size: 11px;
+             white-space: nowrap;
+             pointer-events: none;
+             z-index: 5;
+         }
+         /* 控制面板（图纸下方） */
+         .control-panel {
+             background: #fff;
+             border-radius: 18px;
+             padding: 24px;
+             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+             margin-bottom: 20px;
+         }
+         .row {
+             display: flex;
+             gap: 24px;
+             flex-wrap: wrap;
+         }
+         .col {
+             flex: 1;
+             min-width: 320px;
+         }
+         .control {
+             background: #fafbfc;
+             border: 1px solid #eaeef2;
+             border-radius: 14px;
+             padding: 18px;
+             margin-bottom: 16px;
+         }
+         .control label {
+             display: block;
+             font-weight: 600;
+             margin-bottom: 12px;
+             color: #333;
+             font-size: 15px;
+         }
+         /* 自定义滑块样式 */
+         input[type="range"] {
+             width: 100%;
+             height: 6px;
+             border-radius: 3px;
+             background: #e4e8f0;
+             outline: none;
+             -webkit-appearance: none;
+             cursor: pointer;
+         }
+         input[type="range"]::-webkit-slider-thumb {
+             -webkit-appearance: none;
+             width: 18px;
+             height: 18px;
+             border-radius: 50%;
+             background: linear-gradient(135deg, #4f7cff 0%, #6b8cff 100%);
+             cursor: pointer;
+             box-shadow: 0 2px 6px rgba(79, 124, 255, 0.4);
+             transition: 0.2s;
+         }
+         input[type="range"]::-webkit-slider-thumb:hover {
+             transform: scale(1.15);
+         }
+         .slider-value {
+             display: inline-block;
+             color: #4f7cff;
+             font-weight: 600;
+             margin-left: 6px;
+         }
+         .btn {
+             background: linear-gradient(90deg, #4f7cff 0%, #6b8cff 100%);
+             color: #fff;
+             border: none;
+             padding: 10px 18px;
+             border-radius: 10px;
+             cursor: pointer;
+             font-size: 14px;
+             margin-right: 8px;
+             margin-bottom: 8px;
+             transition: 0.2s;
+             box-shadow: 0 2px 8px rgba(79, 124, 255, 0.25);
+         }
+         .btn:hover {
+             transform: translateY(-1px);
+             box-shadow: 0 4px 12px rgba(79, 124, 255, 0.35);
+         }
+         .btn.green {
+             background: linear-gradient(90deg, #36b37e 0%, #43c98f 100%);
+             box-shadow: 0 2px 8px rgba(54, 179, 126, 0.25);
+         }
+         .btn.green:hover {
+             box-shadow: 0 4px 12px rgba(54, 179, 126, 0.35);
+         }
+         .btn.orange {
+             background: linear-gradient(90deg, #f2994a 0%, #f5a660 100%);
+             box-shadow: 0 2px 8px rgba(242, 153, 74, 0.25);
+         }
+         .btn.orange:hover {
+             box-shadow: 0 4px 12px rgba(242, 153, 74, 0.35);
+         }
+         .checkbox-row {
+             display: flex;
+             gap: 16px;
+             flex-wrap: wrap;
+             margin-top: 12px;
+         }
+         .checkbox-row label {
+             display: flex;
+             align-items: center;
+             gap: 6px;
+             font-weight: normal;
+             cursor: pointer;
+             color: #444;
+             font-size: 14px;
+             user-select: none;
+         }
+         .checkbox-row input[type="checkbox"] {
+             accent-color: #4f7cff;
+             width: 16px;
+             height: 16px;
+         }
+         .small-input-row {
+             display: flex;
+             gap: 14px;
+             flex-wrap: wrap;
+             align-items: center;
+             margin-top: 10px;
+             font-size: 13px;
+             color: #555;
+         }
+         .small-input-row input[type="range"] {
+             width: 100px;
+             flex: 1;
+             min-width: 80px;
+         }
+         /* 色号图例 */
+         .legend-panel {
+             background: #fff;
+             border-radius: 18px;
+             padding: 24px;
+             border: 1px solid #eaeef2;
+             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+         }
+         .legend-title {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             margin-bottom: 16px;
+             flex-wrap: wrap;
+             gap: 8px;
+         }
+         .legend-title h4 {
+             margin: 0;
+             font-size: 18px;
+             color: #222;
+         }
+         .legend-subtitle {
+             font-size: 13px;
+             color: #888;
+         }
+         .legend-grid {
+             display: grid;
+             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+             gap: 12px;
+         }
+         .legend-item {
+             display: flex;
+             align-items: center;
+             gap: 12px;
+             padding: 12px 14px;
+             border: 1px solid #eaeef2;
+             border-radius: 10px;
+             background: #fafbfc;
+             transition: 0.2s;
+         }
+         .legend-item:hover {
+             border-color: #4f7cff;
+             background: #f5f8ff;
+             transform: translateY(-1px);
+         }
+         .legend-color {
+             width: 36px;
+             height: 36px;
+             border-radius: 8px;
+             border: 1px solid #ddd;
+             flex-shrink: 0;
+             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+         }
+         .legend-info {
+             display: flex;
+             flex-direction: column;
+             line-height: 1.5;
+         }
+         .legend-code {
+             font-weight: 700;
+             color: #222;
+             font-size: 14px;
+         }
+         .legend-count {
+             color: #888;
+             font-size: 12px;
+         }
+         .stat-row {
+             margin-top: 20px;
+             padding: 16px 20px;
+             background: linear-gradient(90deg, #fff2cc 0%, #ffe8a3 100%);
+             border-radius: 12px;
+             color: #333;
+             font-size: 14px;
+             line-height: 1.8;
+             display: flex;
+             flex-wrap: wrap;
+             gap: 20px;
+         }
+.stat-row b {
+             color: #222;
+             margin-right: 4px;
+         }
+         /* 弹窗 */
+         .modal {
+             position: fixed;
+             inset: 0;
+             background: rgba(0, 0, 0, 0.72);
+             display: none;
+             align-items: center;
+             justify-content: center;
+             z-index: 999;
+             padding: 20px;
+         }
+         .modal.show {
+             display: flex;
+         }
+         .modal-content {
+             background: #fff;
+             border-radius: 16px;
+             padding: 16px;
+             max-width: 92%;
+             max-height: 92%;
+             overflow: auto;
+         }
+         .modal-content table.paper-grid td {
+             width: 28px;
+             height: 28px;
+             font-size: 11px;
+         }
+         .modal-close {
+             position: absolute;
+             top: 20px;
+             right: 24px;
+             color: #fff;
+             font-size: 36px;
+             cursor: pointer;
+             user-select: none;
+             line-height: 1;
+             transition: 0.2s;
+         }
+         .modal-close:hover {
+             color: #ffe066;
+         }
+     </style>
+ </head>
+ <body>
+     <!-- 顶部上传区 -->
+     <div class="top-panel">
+         <h1>🎨 Mard221色 拼豆图案生成器</h1>
+         <p class="tip">
+             全套Mard 221色（A/B/C/D/E/F/G/H/M分组），图纸格子内直接显示色号，行列黄色标号，和参考图布局一致。<br>
+             💡 色彩匹配使用CIEDE2000 LAB空间算法，还原更精准；支持导出PNG图纸、CSV色号清单。
+         </p>
+         <div class="upload-area">
+             <span style="color:#555;font-size:14px;">选择图片：</span>
+             <input type="file" id="imgUpload" accept="image/*" />
+         </div>
+     </div>
+     <!-- 图纸预览区 -->
+     <div class="preview-box">
+         <div class="preview-title">
+             <h4>📐 拼豆图纸</h4>
+             <div class="preview-controls">
+                 <div class="grid-info" id="gridInfo">未上传图片</div>
+                 <div class="zoom-controls">
+                     <button class="btn-small" id="zoomOut" title="缩小">−</button>
+                     <span id="zoomVal">100%</span>
+                     <button class="btn-small" id="zoomIn" title="放大">+</button>
+                     <button class="btn-small" id="zoomReset" title="重置大小">⟲</button>
+                 </div>
+             </div>
+         </div>
+         <div class="paper-wrap">
+             <table class="paper-grid" id="paperGrid"></table>
+         </div>
+     </div>
+     <!-- 控制面板（图纸下方） -->
+     <div class="control-panel">
+         <div class="row">
+             <div class="col">
+                 <div class="control">
+                     <label>横向格子数量：<span class="slider-value" id="sizeVal">40</span></label>
+                     <input type="range" id="gridSize" min="8" max="120" value="40" />
+                 </div>
+                 <div class="control">
+                     <label>颜色匹配精度：<span class="slider-value" id="precisionVal">平衡</span></label>
+                     <input type="range" id="precision" min="1" max="5" value="3" />
+                 </div>
+                 <div class="control">
+                     <label>图片预处理</label>
+                     <div class="small-input-row">
+                         <span>亮度</span>
+                         <input type="range" id="brightness" min="0" max="200" value="100">
+                         <span>对比度</span>
+                         <input type="range" id="contrast" min="0" max="200" value="100">
+                         <span>饱和度</span>
+                         <input type="range" id="saturate" min="0" max="200" value="100">
+                     </div>
+                 </div>
+             </div>
+             <div class="col">
+                 <div class="control">
+                     <label>图纸选项</label>
+                     <div class="checkbox-row">
+                         <label><input type="checkbox" id="showNumber" checked /> 格子内显示色号</label>
+                         <label><input type="checkbox" id="showGrid" checked /> 显示网格线</label>
+                         <label><input type="checkbox" id="showIndex" checked /> 行列编号</label>
+                         <label><input type="checkbox" id="indexStartZero" /> 编号从0开始</label>
+                         <label><input type="checkbox" id="bwMode" /> 黑白模式</label>
+                     </div>
+                     <div class="checkbox-row">
+                         <label><input type="checkbox" id="forceBlackOutline" /> 开启黑色轮廓</label>
+                     </div>
+                     <div class="small-input-row" style="margin-top:12px;">
+                         <span>轮廓强度：</span>
+                         <input type="range" id="outlineStrength" min="1" max="5" value="2" style="max-width:150px;">
+                     </div>
+                 </div>
+                 <div class="control">
+                     <label>导出操作</label>
+                     <button class="btn" id="downloadPngBtn">下载PNG图纸</button>
+                     <button class="btn green" id="downloadCsvBtn">下载配色CSV</button>
+                     <button class="btn orange" id="resetBtn">重置全部</button>
+                 </div>
+             </div>
+         </div>
+     </div>
+     <!-- 色号图例 -->
+     <div class="legend-panel">
+         <div class="legend-title">
+             <h4>📋 Mard 221色 色号图例</h4>
+             <span class="legend-subtitle">点击图纸可放大查看细节</span>
+         </div>
+         <div class="legend-grid" id="legendGrid"></div>
+         <div class="stat-row" id="statBox"></div>
+     </div>
+     <!-- 放大弹窗 -->
+     <div class="modal" id="modal">
+         <span class="modal-close" id="modalClose">×</span>
+         <div class="modal-content" id="modalContent"></div>
+     </div>
+     <script>
+         const upload = document.getElementById("imgUpload");
+         const gridSlider = document.getElementById("gridSize");
+         const sizeVal = document.getElementById("sizeVal");
+         const precisionSlider = document.getElementById("precision");
+         const precisionVal = document.getElementById("precisionVal");
+         const showNumber = document.getElementById("showNumber");
+         const showGrid = document.getElementById("showGrid");
+         const showIndex = document.getElementById("showIndex");
+         const indexStartZero = document.getElementById("indexStartZero");
+         const bwMode = document.getElementById("bwMode");
+         const forceBlackOutline = document.getElementById("forceBlackOutline");
+         const outlineStrength = document.getElementById("outlineStrength");
+         const brightnessEl = document.getElementById("brightness");
+         const contrastEl = document.getElementById("contrast");
+         const saturateEl = document.getElementById("saturate");
+         const downloadPngBtn = document.getElementById("downloadPngBtn");
+         const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+         const resetBtn = document.getElementById("resetBtn");
+         const paperGrid = document.getElementById("paperGrid");
+         const legendGrid = document.getElementById("legendGrid");
+         const statBox = document.getElementById("statBox");
+         const gridInfo = document.getElementById("gridInfo");
+         const modal = document.getElementById("modal");
+         const modalContent = document.getElementById("modalContent");
+         const modalClose = document.getElementById("modalClose");
+         const zoomIn = document.getElementById("zoomIn");
+         const zoomOut = document.getElementById("zoomOut");
+         const zoomReset = document.getElementById("zoomReset");
+         const zoomVal = document.getElementById("zoomVal");
+         let img = null;
+         let gridCount = 40;
+         let colorCounts = {};
+         let currentGrid = [];
+         let renderTimer = null;
+         // 缩放相关
+         const baseCellSize = 24;
+         let zoomLevel = 1;
+         const minZoom = 0.4;
+         const maxZoom = 2;
+         // ========== MARD 221色 完整色板 ==========
+         const beadPalette = [
+             // A组 26色
+             { code: "A1", rgb: [255, 255, 255] }, { code: "A2", rgb: [248, 244, 232] }, { code: "A3", rgb: [242, 236, 220] }, { code: "A4", rgb: [235, 226, 204] }, { code: "A5", rgb: [224, 214, 188] },
+             { code: "A6", rgb: [210, 198, 168] }, { code: "A7", rgb: [194, 180, 146] }, { code: "A8", rgb: [175, 158, 122] }, { code: "A9", rgb: [154, 136, 98] }, { code: "A10", rgb: [130, 112, 74] },
+             { code: "A11", rgb: [104, 88, 52] }, { code: "A12", rgb: [80, 66, 38] }, { code: "A13", rgb: [56, 44, 24] }, { code: "A14", rgb: [36, 28, 14] }, { code: "A15", rgb: [255, 248, 240] },
+             { code: "A16", rgb: [252, 240, 228] }, { code: "A17", rgb: [246, 228, 210] }, { code: "A18", rgb: [238, 214, 188] }, { code: "A19", rgb: [226, 196, 162] }, { code: "A20", rgb: [208, 174, 134] },
+             { code: "A21", rgb: [186, 148, 104] }, { code: "A22", rgb: [160, 120, 76] }, { code: "A23", rgb: [132, 94, 54] }, { code: "A24", rgb: [100, 68, 36] }, { code: "A25", rgb: [70, 44, 20] }, { code: "A26", rgb: [40, 24, 10] },
+             // B组 32色
+             { code: "B1", rgb: [255, 220, 215] }, { code: "B2", rgb: [254, 200, 192] }, { code: "B3", rgb: [252, 178, 168] }, { code: "B4", rgb: [248, 152, 140] }, { code: "B5", rgb: [240, 124, 110] },
+             { code: "B6", rgb: [228, 92, 80] }, { code: "B7", rgb: [210, 60, 50] }, { code: "B8", rgb: [186, 34, 28] }, { code: "B9", rgb: [156, 16, 16] }, { code: "B10", rgb: [122, 8, 8] },
+             { code: "B11", rgb: [90, 4, 4] }, { code: "B12", rgb: [255, 210, 224] }, { code: "B13", rgb: [252, 186, 204] }, { code: "B14", rgb: [246, 158, 180] }, { code: "B15", rgb: [234, 126, 152] },
+             { code: "B16", rgb: [216, 90, 120] }, { code: "B17", rgb: [190, 54, 90] }, { code: "B18", rgb: [158, 24, 60] }, { code: "B19", rgb: [120, 8, 36] }, { code: "B20", rgb: [84, 4, 20] },
+             { code: "B21", rgb: [255, 202, 234] }, { code: "B22", rgb: [248, 170, 214] }, { code: "B23", rgb: [234, 132, 186] }, { code: "B24", rgb: [210, 92, 154] }, { code: "B25", rgb: [178, 52, 118] },
+             { code: "B26", rgb: [138, 20, 80] }, { code: "B27", rgb: [96, 6, 48] }, { code: "B28", rgb: [60, 2, 28] }, { code: "B29", rgb: [255, 230, 238] }, { code: "B30", rgb: [250, 206, 218] },
+             { code: "B31", rgb: [240, 174, 190] }, { code: "B32", rgb: [222, 136, 158] },
+             // C组 29色
+             { code: "C1", rgb: [240, 222, 248] }, { code: "C2", rgb: [222, 194, 240] }, { code: "C3", rgb: [198, 160, 228] }, { code: "C4", rgb: [166, 120, 210] }, { code: "C5", rgb: [128, 78, 184] },
+             { code: "C6", rgb: [90, 40, 148] }, { code: "C7", rgb: [56, 16, 108] }, { code: "C8", rgb: [30, 4, 72] }, { code: "C9", rgb: [248, 228, 252] }, { code: "C10", rgb: [232, 202, 244] },
+             { code: "C11", rgb: [210, 168, 232] }, { code: "C12", rgb: [178, 126, 214] }, { code: "C13", rgb: [140, 84, 188] }, { code: "C14", rgb: [98, 44, 152] }, { code: "C15", rgb: [62, 18, 112] },
+             { code: "C16", rgb: [34, 6, 76] }, { code: "C17", rgb: [230, 230, 252] }, { code: "C18", rgb: [200, 202, 244] }, { code: "C19", rgb: [162, 166, 230] }, { code: "C20", rgb: [118, 124, 210] },
+             { code: "C21", rgb: [74, 80, 182] }, { code: "C22", rgb: [36, 40, 144] }, { code: "C23", rgb: [14, 14, 104] }, { code: "C24", rgb: [242, 244, 254] }, { code: "C25", rgb: [214, 220, 248] },
+             { code: "C26", rgb: [176, 188, 236] }, { code: "C27", rgb: [130, 148, 218] }, { code: "C28", rgb: [80, 102, 190] }, { code: "C29", rgb: [38, 56, 150] },
+             // D组 26色
+             { code: "D1", rgb: [224, 242, 252] }, { code: "D2", rgb: [190, 224, 246] }, { code: "D3", rgb: [148, 200, 236] }, { code: "D4", rgb: [98, 170, 222] }, { code: "D5", rgb: [46, 134, 200] },
+             { code: "D6", rgb: [14, 94, 164] }, { code: "D7", rgb: [4, 56, 120] }, { code: "D8", rgb: [2, 28, 76] }, { code: "D9", rgb: [210, 246, 250] }, { code: "D10", rgb: [170, 234, 244] },
+             { code: "D11", rgb: [120, 216, 234] }, { code: "D12", rgb: [64, 190, 216] }, { code: "D13", rgb: [18, 154, 188] }, { code: "D14", rgb: [4, 114, 148] }, { code: "D15", rgb: [2, 74, 104] },
+             { code: "D16", rgb: [2, 38, 64] }, { code: "D17", rgb: [200, 248, 242] }, { code: "D18", rgb: [152, 236, 224] }, { code: "D19", rgb: [94, 218, 202] }, { code: "D20", rgb: [34, 190, 170] },
+             { code: "D21", rgb: [6, 148, 130] }, { code: "D22", rgb: [2, 104, 90] }, { code: "D23", rgb: [1, 58, 50] }, { code: "D24", rgb: [220, 248, 244] }, { code: "D25", rgb: [184, 240, 232] },
+             { code: "D26", rgb: [134, 226, 214] },
+             // E组 24色
+             { code: "E1", rgb: [214, 246, 210] }, { code: "E2", rgb: [174, 232, 164] }, { code: "E3", rgb: [126, 214, 108] }, { code: "E4", rgb: [70, 190, 54] }, { code: "E5", rgb: [24, 154, 14] },
+             { code: "E6", rgb: [6, 110, 4] }, { code: "E7", rgb: [2, 68, 2] }, { code: "E8", rgb: [234, 248, 200] }, { code: "E9", rgb: [206, 238, 154] }, { code: "E10", rgb: [168, 222, 94] },
+             { code: "E11", rgb: [118, 196, 34] }, { code: "E12", rgb: [64, 158, 8] }, { code: "E13", rgb: [22, 112, 2] }, { code: "E14", rgb: [4, 66, 1] }, { code: "E15", rgb: [248, 242, 194] },
+             { code: "E16", rgb: [238, 226, 142] }, { code: "E17", rgb: [220, 200, 78] }, { code: "E18", rgb: [190, 164, 24] }, { code: "E19", rgb: [146, 120, 4] }, { code: "E20", rgb: [94, 76, 2] },
+             { code: "E21", rgb: [24, 248, 124] }, { code: "E22", rgb: [124, 248, 184] }, { code: "E23", rgb: [124, 248, 244] }, { code: "E24", rgb: [248, 244, 124] },
+             // F组 25色
+             { code: "F1", rgb: [254, 240, 198] }, { code: "F2", rgb: [252, 222, 146] }, { code: "F3", rgb: [244, 196, 84] }, { code: "F4", rgb: [228, 160, 24] }, { code: "F5", rgb: [194, 118, 4] },
+             { code: "F6", rgb: [148, 78, 2] }, { code: "F7", rgb: [96, 44, 2] }, { code: "F8", rgb: [254, 224, 184] }, { code: "F9", rgb: [250, 200, 134] }, { code: "F10", rgb: [238, 166, 74] },
+             { code: "F11", rgb: [214, 124, 20] }, { code: "F12", rgb: [174, 80, 4] }, { code: "F13", rgb: [124, 46, 2] }, { code: "F14", rgb: [72, 22, 1] }, { code: "F15", rgb: [254, 208, 174] },
+             { code: "F16", rgb: [246, 174, 120] }, { code: "F17", rgb: [228, 130, 60] }, { code: "F18", rgb: [194, 84, 14] }, { code: "F19", rgb: [146, 46, 4] }, { code: "F20", rgb: [88, 20, 1] },
+             { code: "F21", rgb: [254, 234, 224] }, { code: "F22", rgb: [250, 210, 190] }, { code: "F23", rgb: [240, 178, 146] }, { code: "F24", rgb: [218, 134, 94] }, { code: "F25", rgb: [180, 86, 46] },
+             // G组 21色
+             { code: "G1", rgb: [234, 210, 194] }, { code: "G2", rgb: [214, 180, 154] }, { code: "G3", rgb: [188, 146, 114] }, { code: "G4", rgb: [154, 104, 74] }, { code: "G5", rgb: [114, 66, 40] },
+             { code: "G6", rgb: [70, 34, 18] }, { code: "G7", rgb: [244, 234, 228] }, { code: "G8", rgb: [228, 210, 200] }, { code: "G9", rgb: [204, 178, 164] }, { code: "G10", rgb: [170, 136, 120] },
+             { code: "G11", rgb: [128, 90, 76] }, { code: "G12", rgb: [80, 48, 38] }, { code: "G13", rgb: [244, 240, 238] }, { code: "G14", rgb: [226, 218, 214] }, { code: "G15", rgb: [198, 184, 178] },
+             { code: "G16", rgb: [160, 142, 136] }, { code: "G17", rgb: [118, 98, 92] }, { code: "G18", rgb: [74, 56, 52] }, { code: "G19", rgb: [230, 230, 230] }, { code: "G20", rgb: [194, 194, 194] },
+             { code: "G21", rgb: [148, 148, 148] },
+             // H组 23色
+             { code: "H1", rgb: [104, 104, 104] }, { code: "H2", rgb: [64, 64, 64] }, { code: "H3", rgb: [32, 32, 32] }, { code: "H4", rgb: [10, 10, 10] }, { code: "H5", rgb: [248, 248, 248] },
+             { code: "H6", rgb: [236, 236, 236] }, { code: "H7", rgb: [216, 216, 216] }, { code: "H8", rgb: [186, 186, 186] }, { code: "H9", rgb: [150, 150, 150] }, { code: "H10", rgb: [112, 112, 112] },
+             { code: "H11", rgb: [78, 78, 78] }, { code: "H12", rgb: [44, 44, 44] }, { code: "H13", rgb: [16, 16, 16] }, { code: "H14", rgb: [252, 252, 252] }, { code: "H15", rgb: [242, 242, 242] },
+             { code: "H16", rgb: [224, 224, 224] }, { code: "H17", rgb: [198, 198, 198] }, { code: "H18", rgb: [164, 164, 164] }, { code: "H19", rgb: [128, 128, 128] }, { code: "H20", rgb: [90, 90, 90] },
+             { code: "H21", rgb: [54, 54, 54] }, { code: "H22", rgb: [22, 22, 22] }, { code: "H23", rgb: [4, 4, 4] },
+             // M组 15色
+             { code: "M1", rgb: [255, 255, 255] }, { code: "M2", rgb: [255, 250, 210] }, { code: "M3", rgb: [255, 240, 160] }, { code: "M4", rgb: [255, 220, 100] }, { code: "M5", rgb: [255, 190, 40] },
+             { code: "M6", rgb: [255, 160, 0] }, { code: "M7", rgb: [255, 120, 0] }, { code: "M8", rgb: [255, 80, 0] }, { code: "M9", rgb: [255, 40, 0] }, { code: "M10", rgb: [255, 0, 0] },
+             { code: "M11", rgb: [200, 0, 0] }, { code: "M12", rgb: [150, 0, 0] }, { code: "M13", rgb: [100, 0, 0] }, { code: "M14", rgb: [50, 0, 0] }, { code: "M15", rgb: [0, 0, 0] }
+         ];
+         const bwPalette = [
+             { code: "M1", rgb: [255, 255, 255] },
+             { code: "M15", rgb: [0, 0, 0] }
+         ];
+         // ========== 性能优化：预计算所有色号的LAB值 ==========
+         function initPaletteLab() {
+             beadPalette.forEach(c => c.lab = rgb2lab(c.rgb[0], c.rgb[1], c.rgb[2]));
+             bwPalette.forEach(c => c.lab = rgb2lab(c.rgb[0], c.rgb[1], c.rgb[2]));
+         }
+         initPaletteLab();
+         // ========== 颜色空间转换 ==========
+         function rgb2lab(r, g, b) {
+             r /= 255; g /= 255; b /= 255;
+             r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+             g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+             b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+             let x = r * 0.4124 + g * 0.3576 + b * 0.1805;
+             let y = r * 0.2127 + g * 0.7152 + b * 0.0722;
+             let z = r * 0.0193 + g * 0.1192 + b * 0.9503;
+             x /= 0.95047; y /= 1.000; z /= 1.08883;
+             function f(t) { return t > 0.008856 ? Math.cbrt(t) : (7.787 * t) + (16 / 116); }
+             return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+         }
+         function lab2rgb(L, a, b) {
+             let y = (L + 16) / 116;
+             let x = a / 500 + y;
+             let z = y - b / 200;
+             function f_inv(t) {
+                 const t3 = t * t * t;
+                 return t3 > 0.008856 ? t3 : (t - 16 / 116) / 7.787;
+             }
+             x = f_inv(x) * 0.95047;
+             y = f_inv(y) * 1.000;
+             z = f_inv(z) * 1.08883;
+             let r = x * 3.2406 + y * -1.5372 + z * -0.4986;
+             let g = x * -0.9689 + y * 1.8758 + z * 0.0415;
+             let bl = x * 0.0557 + y * -0.2040 + z * 1.0570;
+             function gamma(t) {
+                 return t <= 0.0031308 ? 12.92 * t : 1.055 * Math.pow(t, 1 / 2.4) - 0.055;
+             }
+             r = Math.max(0, Math.min(255, Math.round(gamma(r) * 255)));
+             g = Math.max(0, Math.min(255, Math.round(gamma(g) * 255)));
+             bl = Math.max(0, Math.min(255, Math.round(gamma(bl) * 255)));
+             return [r, g, bl];
+         }
+         function ciede2000(l1, a1, b1, l2, a2, b2) {
+             const deg2rad = d => d * Math.PI / 180;
+             const rad2deg = r => r * 180 / Math.PI;
+             const c1 = Math.hypot(a1, b1);
+             const c2 = Math.hypot(a2, b2);
+             const cbar = (c1 + c2) / 2;
+             const g = 0.5 * (1 - Math.sqrt(Math.pow(cbar, 7) / (Math.pow(cbar, 7) + Math.pow(25, 7))));
+             const a1p = a1 * (1 + g);
+             const a2p = a2 * (1 + g);
+             const c1p = Math.hypot(a1p, b1);
+             const c2p = Math.hypot(a2p, b2);
+             let h1p = rad2deg(Math.atan2(b1, a1p));
+             let h2p = rad2deg(Math.atan2(b2, a2p));
+             if (b1 === 0 && a1p === 0) h1p = 0;
+             if (b2 === 0 && a2p === 0) h2p = 0;
+             let dhp = h2p - h1p;
+             if (Math.abs(dhp) > 180) dhp = dhp > 0 ? dhp - 360 : dhp + 360;
+             const dL = l2 - l1;
+             const dC = c2p - c1p;
+             const dH = 2 * Math.sqrt(c1p * c2p) * Math.sin(deg2rad(dhp / 2));
+             const Lbar = (l1 + l2) / 2;
+             const cbarp = (c1p + c2p) / 2;
+             let hbarp = (h1p + h2p) / 2;
+             if (Math.abs(h2p - h1p) > 180) hbarp += 180;
+             const T = 1 - 0.17 * Math.cos(deg2rad(hbarp - 30)) + 0.24 * Math.cos(deg2rad(2 * hbarp)) + 0.32 * Math.cos(deg2rad(3 * hbarp + 6)) - 0.20 * Math.cos(deg2rad(4 * hbarp - 63));
+             const sl = 1 + (0.015 * Math.pow(Lbar - 50, 2)) / Math.sqrt(20 + Math.pow(Lbar - 50, 2));
+             const sc = 1 + 0.045 * cbarp;
+             const sh = 1 + 0.015 * cbarp * T;
+             const rt = -2 * Math.sqrt(Math.pow(cbarp, 7) / (Math.pow(cbarp, 7) + Math.pow(25, 7))) * Math.sin(deg2rad(60 * Math.exp(-Math.pow((hbarp - 275) / 25, 2))));
+             return Math.sqrt(
+                 Math.pow(dL / sl, 2) +
+                 Math.pow(dC / sc, 2) +
+                 Math.pow(dH / sh, 2) +
+                 rt * (dC / sc) * (dH / sh)
+             );
+         }
+         // 优化后的颜色匹配：使用预计算的LAB值
+         function getClosestBeadColor(r, g, b) {
+             const palette = bwMode.checked ? bwPalette : beadPalette;
+             const [L1, A1, B1] = rgb2lab(r, g, b);
+             let minDE = Infinity;
+             let best = palette[0];
+             for (const c of palette) {
+                 const de = ciede2000(L1, A1, B1, c.lab[0], c.lab[1], c.lab[2]);
+                 if (de < minDE) {
+                     minDE = de;
+                     best = c;
+                 }
+             }
+             return best;
+         }
+         // ========== 优化轮廓处理：基于LAB亮度差 ==========
+         function applyOutline(grid, strength) {
+             const h = grid.length;
+             const w = grid[0].length;
+             const newGrid = grid.map(row => row.slice());
+             const palette = bwMode.checked ? bwPalette : beadPalette;
+             const black = palette.find(p => p.code === "M15") || palette[0];
+             const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+             const threshold = 12 + (strength - 1) * 6; // 亮度差阈值
+             for (let y = 1; y < h - 1; y++) {
+                 for (let x = 1; x < w - 1; x++) {
+                     const c = grid[y][x];
+                     let diffSum = 0;
+                     for (const [dy, dx] of dirs) {
+                         const neighbor = grid[y + dy][x + dx];
+                         const lDiff = Math.abs(c.lab[0] - neighbor.lab[0]);
+                         if (lDiff > threshold) diffSum++;
+                     }
+                     if (diffSum >= strength) {
+                         newGrid[y][x] = black;
+                     }
+                 }
+             }
+             return newGrid;
+         }
+         // ========== 图片预处理 ==========
+         function applyFilter(imgData, br, ct, sat) {
+             const d = imgData.data;
+             for (let i = 0; i < d.length; i += 4) {
+                 let r = d[i], g = d[i + 1], b = d[i + 2];
+                 // 亮度
+                 r = r * br / 100;
+                 g = g * br / 100;
+                 b = b * br / 100;
+                 // 对比度
+                 const cf = (ct - 100) / 100 + 1;
+                 r = (r - 128) * cf + 128;
+                 g = (g - 128) * cf + 128;
+                 b = (b - 128) * cf + 128;
+                 // 饱和度
+                 const gray = r * 0.299 + g * 0.587 + b * 0.114;
+                 const sf = sat / 100;
+                 r = gray + (r - gray) * sf;
+                 g = gray + (g - gray) * sf;
+                 b = gray + (b - gray) * sf;
+                 d[i] = Math.max(0, Math.min(255, r));
+                 d[i + 1] = Math.max(0, Math.min(255, g));
+                 d[i + 2] = Math.max(0, Math.min(255, b));
+             }
+             return imgData;
+         }
+         // ========== 防抖渲染优化 ==========
+         function debounceRender() {
+             clearTimeout(renderTimer);
+             renderTimer = setTimeout(() => {
+                 if (img) renderBeans();
+             }, 120);
+         }
+         // ========== 缩放功能 ==========
+         function updateZoom() {
+             zoomVal.textContent = Math.round(zoomLevel * 100) + "%";
+             if (currentGrid.length > 0) {
+                 renderGridTable(currentGrid);
+             }
+         }
+         zoomIn.onclick = () => {
+             zoomLevel = Math.min(maxZoom, zoomLevel + 0.1);
+             updateZoom();
+         };
+         zoomOut.onclick = () => {
+             zoomLevel = Math.max(minZoom, zoomLevel - 0.1);
+             updateZoom();
+         };
+         zoomReset.onclick = () => {
+             zoomLevel = 1;
+             updateZoom();
+         };
+         // ========== 事件绑定 ==========
+         gridSlider.oninput = () => {
+             gridCount = Number(gridSlider.value);
+             sizeVal.textContent = gridCount;
+         };
+         gridSlider.onchange = debounceRender;
+         const precisionMap = { 1: "超简", 2: "低精度", 3: "平衡", 4: "高精度", 5: "超精细" };
+         precisionSlider.oninput = () => {
+             precisionVal.textContent = precisionMap[precisionSlider.value];
+         };
+         precisionSlider.onchange = debounceRender;
+         [showNumber, showGrid, showIndex, indexStartZero, bwMode, forceBlackOutline, outlineStrength, brightnessEl, contrastEl, saturateEl].forEach(el => {
+             el.addEventListener("change", debounceRender);
+             el.addEventListener("input", (e) => {
+                 if (e.target.type === "range") debounceRender();
+             });
+         });
+         upload.onchange = (e) => {
+             const file = e.target.files[0];
+             if (!file) return;
+             const reader = new FileReader();
+             reader.onload = ev => {
+                 img = new Image();
+                 img.onload = () => renderBeans();
+                 img.src = ev.target.result;
+             };
+             reader.readAsDataURL(file);
+         };
+         // ========== 主渲染：生成表格图纸 ==========
+         function renderBeans() {
+             const tempC = document.createElement("canvas");
+             // 按原图比例计算高度，避免拉伸
+             const ratio = img.height / img.width;
+             const gridW = gridCount;
+             const gridH = Math.round(gridCount * ratio);
+tempC.width = gridW;
+             tempC.height = gridH;
+             const tempCtx = tempC.getContext("2d");
+             // 高质量缩放
+             tempCtx.imageSmoothingEnabled = true;
+             tempCtx.imageSmoothingQuality = "high";
+             tempCtx.drawImage(img, 0, 0, gridW, gridH);
+             let imgData = tempCtx.getImageData(0, 0, gridW, gridH);
+             imgData = applyFilter(imgData, Number(brightnessEl.value), Number(contrastEl.value), Number(saturateEl.value));
+             tempCtx.putImageData(imgData, 0, 0);
+             const grid = [];
+             colorCounts = {};
+             for (let y = 0; y < gridH; y++) {
+                 const row = [];
+                 for (let x = 0; x < gridW; x++) {
+                     const idx = (y * gridW + x) * 4;
+                     const r = imgData.data[idx];
+                     const g = imgData.data[idx + 1];
+                     const b = imgData.data[idx + 2];
+                     const color = getClosestBeadColor(r, g, b);
+                     row.push(color);
+                     colorCounts[color.code] = (colorCounts[color.code] || 0) + 1;
+                 }
+                 grid.push(row);
+             }
+             // 优化：LAB空间颜色平滑（替代原RGB平均，更符合人眼）
+             if (precisionSlider.value < 5) {
+                 const level = Number(precisionSlider.value);
+                 const smoothTimes = 5 - level;
+                 for (let i = 0; i < smoothTimes; i++) {
+                     const newGrid = grid.map(r => r.slice());
+                     for (let y = 1; y < gridH - 1; y++) {
+                         for (let x = 1; x < gridW - 1; x++) {
+                             // LAB空间邻域平均
+                             let sumL = 0, sumA = 0, sumB = 0;
+                             const neighbors = [
+                                 grid[y][x], grid[y-1][x], grid[y+1][x], grid[y][x-1], grid[y][x+1]
+                             ];
+                             neighbors.forEach(n => {
+                                 sumL += n.lab[0];
+                                 sumA += n.lab[1];
+                                 sumB += n.lab[2];
+                             });
+                             const avgL = sumL / 5;
+                             const avgA = sumA / 5;
+                             const avgB = sumB / 5;
+                             const [r, g, b] = lab2rgb(avgL, avgA, avgB);
+                             newGrid[y][x] = getClosestBeadColor(r, g, b);
+                         }
+                     }
+                     grid.splice(0, grid.length, ...newGrid);
+                 }
+             }
+             // 黑色轮廓
+             if (forceBlackOutline.checked) {
+                 const st = Number(outlineStrength.value);
+                 const outlined = applyOutline(grid, st);
+                 for (let y = 0; y < gridH; y++) {
+                     for (let x = 0; x < gridW; x++) {
+                         grid[y][x] = outlined[y][x];
+                     }
+                 }
+                 // 重新统计颜色
+                 colorCounts = {};
+                 for (let y = 0; y < gridH; y++) {
+                     for (let x = 0; x < gridW; x++) {
+                         const c = grid[y][x];
+                         colorCounts[c.code] = (colorCounts[c.code] || 0) + 1;
+                     }
+                 }
+             }
+             currentGrid = grid;
+             // 保存当前网格尺寸
+             currentGrid.width = gridW;
+             currentGrid.height = gridH;
+             renderGridTable(grid);
+             renderLegend();
+             updateStat();
+         }
+         function renderGridTable(grid) {
+             const showIndex = showIndexEl.checked;
+             const showNumber = showNumberEl.checked;
+             const showGrid = showGridEl.checked;
+             const indexStartZero = indexStartZeroEl.checked;
+             const offset = indexStartZero ? 0 : 1;
+             const cellSize = Math.round(baseCellSize * zoomLevel);
+             const fontSize = Math.max(8, Math.round(10 * zoomLevel)) + "px";
+             const w = currentGrid.width || gridCount;
+             const h = currentGrid.height || gridCount;
+             let html = "";
+             if (showIndex) {
+                 html += "<tr>";
+                 html += `<td class="index-cell" style="width:${cellSize}px;height:${cellSize}px;"></td>`;
+                 for (let x = 0; x < w; x++) {
+                     html += `<td class="col-index" style="width:${cellSize}px;height:${cellSize}px;font-size:${fontSize};">${x + offset}</td>`;
+                 }
+                 html += "</tr>";
+             }
+             for (let y = 0; y < h; y++) {
+                 html += "<tr>";
+                 if (showIndex) {
+                     html += `<td class="row-index" style="width:${cellSize}px;height:${cellSize}px;font-size:${fontSize};">${y + offset}</td>`;
+                 }
+                 for (let x = 0; x < w; x++) {
+                     const c = grid[y][x];
+                     const bg = `background:rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`;
+                     const border = showGrid ? 'border:1px solid #d9dde2;' : 'border:none;';
+                     const br = c.rgb[0] * 0.299 + c.rgb[1] * 0.587 + c.rgb[2] * 0.114;
+                     const textColor = br > 140 ? "color:#111;" : "color:#fff;";
+                     const numberText = showNumber ? c.code : "";
+                     const info = `${c.code}`;
+                     html += `<td class="cell-bead" style="width:${cellSize}px;height:${cellSize}px;${bg};${border};${textColor};font-size:${fontSize};" data-bead-info="${info}">${numberText}</td>`;
+                 }
+                 html += "</tr>";
+             }
+             paperGrid.innerHTML = html;
+             gridInfo.textContent = `图纸规格：${w} × ${h} 格 | Mard 221色`;
+         }
+         function renderLegend() {
+             const palette = bwMode.checked ? bwPalette : beadPalette;
+             const list = palette
+                 .map(c => ({ ...c, count: colorCounts[c.code] || 0 }))
+                 .filter(c => c.count > 0)
+                 .sort((a, b) => b.count - a.count);
+             legendGrid.innerHTML = list.map(c => `
+                 <div class="legend-item">
+                     <div class="legend-color" style="background:rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})"></div>
+                     <div class="legend-info">
+                         <span class="legend-code">${c.code}</span>
+                         <span class="legend-count">数量：${c.count} 颗</span>
+                     </div>
+                 </div>
+             `).join("");
+         }
+         function updateStat() {
+             const total = Object.values(colorCounts).reduce((a, b) => a + b, 0);
+             const used = Object.values(colorCounts).filter(v => v > 0).length;
+             const w = currentGrid.width || gridCount;
+             const h = currentGrid.height || gridCount;
+             statBox.innerHTML = `
+                 <div><b>图纸规格：</b>${w} × ${h} 格</div>
+                 <div><b>使用颜色：</b>${used} 种</div>
+                 <div><b>拼豆总数：</b>${total} 颗</div>
+                 <div><b>色卡：</b>Mard 221全套色</div>
+             `;
+         }
+         // ========== 放大查看 ==========
+         paperGrid.addEventListener("click", () => {
+             showModalGrid(currentGrid);
+         });
+function showModalGrid(grid) {
+             const showIndex = showIndexEl.checked;
+             const showNumber = showNumberEl.checked;
+             const showGrid = showGridEl.checked;
+             const indexStartZero = indexStartZeroEl.checked;
+             const offset = indexStartZero ? 0 : 1;
+             const w = currentGrid.width || gridCount;
+             const h = currentGrid.height || gridCount;
+             let html = `<table class="paper-grid">`;
+             if (showIndex) {
+                 html += "<tr>";
+                 html += `<td class="index-cell"></td>`;
+                 for (let x = 0; x < w; x++) {
+                     html += `<td class="col-index">${x + offset}</td>`;
+                 }
+                 html += "</tr>";
+             }
+             for (let y = 0; y < h; y++) {
+                 html += "<tr>";
+                 if (showIndex) {
+                     html += `<td class="row-index">${y + offset}</td>`;
+                 }
+                 for (let x = 0; x < w; x++) {
+                     const c = grid[y][x];
+                     const bg = `background:rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`;
+                     const border = showGrid ? 'border:1px solid #d9dde2;' : 'border:none;';
+                     const br = c.rgb[0] * 0.299 + c.rgb[1] * 0.587 + c.rgb[2] * 0.114;
+                     const textColor = br > 140 ? "color:#111;" : "color:#fff;";
+                     const numberText = showNumber ? c.code : "";
+                     html += `<td style="${bg};${border};${textColor}">${numberText}</td>`;
+                 }
+                 html += "</tr>";
+             }
+             html += "</table>";
+             modalContent.innerHTML = html;
+             modal.classList.add("show");
+         }
+         modalClose.addEventListener("click", () => {
+             modal.classList.remove("show");
+         });
+         modal.addEventListener("click", e => {
+             if (e.target === modal) modal.classList.remove("show");
+         });
+         // ========== 导出 PNG ==========
+         downloadPngBtn.onclick = () => {
+             if (!currentGrid.length) {
+                 alert("请先上传图片生成图纸");
+                 return;
+             }
+             const showIndex = showIndexEl.checked;
+             const showNumber = showNumberEl.checked;
+             const showGrid = showGridEl.checked;
+             const indexStartZero = indexStartZeroEl.checked;
+             const offset = indexStartZero ? 0 : 1;
+             const cellSize = 26;
+             const labelSize = showIndex ? 34 : 0;
+             const w = currentGrid.width || gridCount;
+             const h = currentGrid.height || gridCount;
+             const canvas = document.createElement("canvas");
+             const ctx = canvas.getContext("2d");
+             canvas.width = w * cellSize + labelSize;
+             canvas.height = h * cellSize + labelSize;
+             ctx.fillStyle = "#ffffff";
+             ctx.fillRect(0, 0, canvas.width, canvas.height);
+             if (showIndex) {
+                 ctx.fillStyle = "#ffe066";
+                 ctx.fillRect(0, 0, labelSize, labelSize);
+                 ctx.fillStyle = "#222";
+                 ctx.font = "bold 12px Arial";
+                 ctx.textAlign = "center";
+                 ctx.textBaseline = "middle";
+                 for (let i = 0; i < w; i++) {
+                     ctx.fillText(i + offset, labelSize + i * cellSize + cellSize / 2, labelSize / 2);
+                 }
+                 for (let i = 0; i < h; i++) {
+                     ctx.fillText(i + offset, labelSize / 2, labelSize + i * cellSize + cellSize / 2);
+                 }
+             }
+             for (let y = 0; y < h; y++) {
+                 for (let x = 0; x < w; x++) {
+                     const c = currentGrid[y][x];
+                     const ox = labelSize + x * cellSize;
+                     const oy = labelSize + y * cellSize;
+                     ctx.fillStyle = `rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`;
+                     ctx.fillRect(ox, oy, cellSize, cellSize);
+                     if (showGrid) {
+                         ctx.strokeStyle = "#d9dde2";
+                         ctx.lineWidth = 1;
+                         ctx.strokeRect(ox + 0.5, oy + 0.5, cellSize, cellSize);
+                     }
+                     if (showNumber) {
+                         const br = c.rgb[0] * 0.299 + c.rgb[1] * 0.587 + c.rgb[2] * 0.114;
+                         ctx.fillStyle = br > 140 ? "#111" : "#fff";
+                         ctx.font = "bold 10px Arial";
+                         ctx.textAlign = "center";
+                         ctx.textBaseline = "middle";
+                         ctx.fillText(c.code, ox + cellSize / 2, oy + cellSize / 2);
+                     }
+                 }
+             }
+             const link = document.createElement("a");
+             link.download = `Mard221拼豆图纸_${w}x${h}.png`;
+             link.href = canvas.toDataURL("image/png");
+             link.click();
+         };
+         // ========== 导出 CSV ==========
+         downloadCsvBtn.onclick = () => {
+             if (!currentGrid.length) {
+                 alert("请先上传图片生成图纸");
+                 return;
+             }
+             const rows = [["色号", "RGB", "数量"]];
+             const palette = bwMode.checked ? bwPalette : beadPalette;
+             for (const c of palette) {
+                 const cnt = colorCounts[c.code] || 0;
+                 if (cnt > 0) {
+                     rows.push([c.code, `${c.rgb[0]},${c.rgb[1]},${c.rgb[2]}`, cnt]);
+                 }
+             }
+             const csv = "\uFEFF" + rows.map(r => r.join(",")).join("\n");
+             const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+             const link = document.createElement("a");
+             const w = currentGrid.width || gridCount;
+             const h = currentGrid.height || gridCount;
+             link.download = `Mard221色号清单_${w}x${h}.csv`;
+             link.href = URL.createObjectURL(blob);
+             link.click();
+         };
+         // ========== 重置 ==========
+         resetBtn.onclick = () => {
+             gridSlider.value = 40;
+             gridCount = 40;
+             sizeVal.textContent = 40;
+             precisionSlider.value = 3;
+             precisionVal.textContent = "平衡";
+             brightnessEl.value = 100;
+             contrastEl.value = 100;
+             saturateEl.value = 100;
+             showNumber.checked = true;
+             showGrid.checked = true;
+             showIndex.checked = true;
+             indexStartZero.checked = false;
+             bwMode.checked = false;
+             forceBlackOutline.checked = false;
+             outlineStrength.value = 2;
+             zoomLevel = 1;
+             zoomVal.textContent = "100%";
+             img = null;
+             upload.value = "";
+             currentGrid = [];
+             paperGrid.innerHTML = "";
+             legendGrid.innerHTML = "";
+             statBox.innerHTML = "";
+             gridInfo.textContent = "未上传图片";
+         };
+         // 变量名兼容处理
+         const showIndexEl = showIndex;
+         const showNumberEl = showNumber;
+         const showGridEl = showGrid;
+         const indexStartZeroEl = indexStartZero;
+     </script>
+ </body>
+ </html>
+
